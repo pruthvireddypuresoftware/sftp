@@ -37,7 +37,7 @@ jobs:
         uses: docker/login-action@v1
         with:
           username: reddy1991
-          password: ${{ secrets.SFTP-TOKEN }}
+          password: Reddy_1991
 
       - name: Build and publish debian image
         uses: docker/build-push-action@v2
