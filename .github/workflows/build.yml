@@ -73,8 +73,8 @@ jobs:
           platforms: linux/arm64
           push: true
           tags: |
-            $IMAGE_NAME:debian-arm64
-            $IMAGE_NAME:latest-arm64
+            reddy1991/sftp:debian-arm64
+            reddy1991/sftp:latest-arm64
       
       - name: Build and publish alpine arm64 images
         uses: docker/build-push-action@v2
@@ -84,4 +84,4 @@ jobs:
           platforms: linux/arm64
           push: true
           tags: |
-            $IMAGE_NAME:alpine-arm64
+            reddy1991/sftp:alpine-arm64
