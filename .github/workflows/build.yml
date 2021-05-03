@@ -58,13 +58,7 @@ jobs:
         if: github.ref == 'refs/heads/master'
         run: |
           docker push $IMAGE_NAME # no tags specified to include all tags
-          
-      - name: Verify signature
-        if: github.ref == 'refs/heads/master'
-        uses: atmoz/git-verify-ref@master
-        with:
-          import-github-users: atmoz
-          
+                    
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
 
