@@ -9,7 +9,7 @@ on:
   pull_request:
 
 env:
-  IMAGE_NAME: atmoz/sftp
+  IMAGE_NAME: reddy1991/sftp
 
 jobs:
   build:
@@ -25,34 +25,77 @@ jobs:
         uses: ludeeus/action-shellcheck@master
         with:
           ignore: tests/shunit2
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+      - name: Build debian image
+        run: |
+          docker build . \
+            --pull=true \
+            --file=Dockerfile \
+            --tag="$IMAGE_NAME:latest" \
+            --tag="$IMAGE_NAME:debian" \
+            --label="org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
+            --label="org.opencontainers.image.revision=$GITHUB_SHA" \
+            --label="org.opencontainers.image.created=$(date --rfc-3339=seconds)"
 
+      - name: Test debian image
+        run: tests/run $IMAGE_NAME:debian
+
+      - name: Build alpine image
+        run: |
+          docker build . \
+            --pull=true \
+            --file=Dockerfile-alpine \
+            --tag="$IMAGE_NAME:alpine" \
+            --label="org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
+            --label="org.opencontainers.image.revision=$GITHUB_SHA" \
+            --label="org.opencontainers.image.created=$(date --rfc-3339=seconds)"
+            
+      - name: Test alpine image
+        run: tests/run $IMAGE_NAME:alpine
+      
       - name: Login to Docker Hub
         uses: docker/login-action@v1
         with:
           username: reddy1991
           password: Reddy_1991
 
-      - name: Build and publish debian image
+      - name: Push images to Docker Hub registry
+        if: github.ref == 'refs/heads/master'
+        run: |
+          echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login \
+            -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+          docker push $IMAGE_NAME # no tags specified to include all tags
+          docker logout
+          
+      - name: Verify signature
+        if: github.ref == 'refs/heads/master'
+        uses: atmoz/git-verify-ref@master
+        with:
+          import-github-users: atmoz
+          
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Build and publish debian arm64 images
         uses: docker/build-push-action@v2
         with:
           context: .
           file: Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/arm64
           push: true
           tags: |
-            reddy1991/sftp:debian
-            reddy1991/sftp:latest
-      - name: Build and publish alpine images
+            $IMAGE_NAME:debian-arm64
+            $IMAGE_NAME:latest-arm64
+      
+      - name: Build and publish alpine arm64 images
         uses: docker/build-push-action@v2
         with:
           context: .
           file: Dockerfile-alpine
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/arm64
           push: true
           tags: |
-            reddy1991/sftp:alpine
+            $IMAGE_NAME:alpine-arm64
